@@ -1,9 +1,12 @@
 """
 Please write you name here: Peter Brown
 """
+"""
+
+"""
 
 import numpy as np
-from datetime import *
+from datetime import * # I made life more difficult for myself by involving datetime objects
 import collections
 
 format = '%H:%M' #defines time format for the datetime module to accept
@@ -20,30 +23,31 @@ breakEnd = [] # times breaks start at
 startTimes = [] # times shifts start at
 endTimes = [] # times shifts end at
 payRates = [] # pay rate of each staff member
-salesHour = []
-salesHourReduced = []
+salesHour = [] # list for storing only the hour in which a sale took place, not the minutes
 
-salesOverHour = {}
-sales = {}
-shifts = {}
-costPerHour = {}
-percentageCostPerSale = {}
-bestAndWorstPercentages = []
+salesOverHour = {} # dictionary with time as key in format HH:00 and total sales over that hour as value
+costPerHour = {} # dictionary with time as key in format HH:00 and total labour cost over that hour as value
+percentageCostPerSale = {} # dictionary with time as key and total labour cost/per sale over that hour as value
 
-listOfHours = []
+listOfHours = [] # a list of hours in the day, e.g. ['00:00','1:00','2:00',...'24:00']
 
-x = 0
+x = 0 # initialises counter
 while x <= 23:  # creates a 24 member list of hours, e.g. ['00:00','1:00','2:00',...'24:00']
-    stringTime = str(x) + ':00'
+    stringTime = str(x) + ':00' # adds :00 to get to HH:00 format desired
     listOfHours.append(stringTime)
-    x = x + 1
+    x = x + 1 # increments counter
 
-def costOverHour(time): # enter time in format 'HH:MM' including apostrophes
+def costOverHour(time):
 
-    t1 = datetime.strptime(time, format)
-    t2 = t1 + timedelta(hours=1)
-    counter = 0
-    labourCost = 0
+    """
+    Input: Hour in format 'HH:00' including apostrophes
+    Output: Total labour cost for that hour, float.
+
+    """
+    t1 = datetime.strptime(time, format) # converts the string time input into a datetime object, represents start of hour to be considered
+    t2 = t1 + timedelta(hours=1)    # adds one hour to the start hour, creating an hour window defined by t1 and t2
+    counter = 0 # initialises a counter
+    labourCost = 0 # initialises labour cost
 
     for i in startTimes:
 
@@ -75,8 +79,9 @@ def costOverHour(time): # enter time in format 'HH:MM' including apostrophes
             fractionWorked = ( 1 - (t2 - endTimes[counter]) / timedelta(hours=1))
             labourCost = labourCost + payRates[counter] * fractionWorked
 
-        counter = counter + 1
-    return labourCost
+        counter = counter + 1 # increments counter
+
+    return labourCost # returns labour cost as float for the hour
 
 
 def process_shifts(path_to_csv):
@@ -95,7 +100,7 @@ def process_shifts(path_to_csv):
         50 pounds
         :rtype dict:
     """
-
+    # ingests the CSV and defines what data type each is and how many bytes it needs
     shifts = np.genfromtxt(path_to_csv, delimiter=',', skip_header=1, dtype=[('breakTime', 'U10'), ('endTime', 'U5'), ('payRate', 'd'), ('startTime', 'U5')])
 
     # separates the work_shifts.csv out into separate lists for break notes, end times, start times and pay rates
@@ -108,6 +113,10 @@ def process_shifts(path_to_csv):
     for l in shifts['startTime']:
         startTimes.append(l)
 
+    # this section deals with the awkward formatting the breaks were given in
+    # it splits by '-' and removes letters like PM etc
+    # whether a time is 24 or 12 hour is inferred by whether the break starts before the shift does
+    # if this is the case, then add 12 hours to the time to convert it to 24 hour format
     for i in breaks:
         start, end = i.split('-')
         for char in start:
@@ -318,7 +327,6 @@ def main(path_to_shifts, path_to_sales):
     best_hour, worst_hour = best_and_worst_hour(percentages)
     return best_hour, worst_hour
 
-print()
 print(main("work_shifts.csv", "transactions.csv"))
 
 # Please write you name here: Peter Brown
