@@ -21,6 +21,13 @@ sales = {}
 shifts = {}
 costPerHour = {}
 
+listOfHours = []
+
+x = 0
+while x <= 23:  # creates a 24 member list of hours, e.g. ['00:00','1:00','2:00',...'24:00']
+    stringTime = str(x) + ':00'
+    listOfHours.append(stringTime)
+    x = x + 1
 
 '''
 
@@ -102,6 +109,7 @@ for i in breakEnd:
     
 '''
 
+'''
 for i in transactions['Value']:
     transactionValue.append(i)
 
@@ -109,6 +117,8 @@ for j in transactions['Time']:
     Time = datetime.strptime(j, format)
     transactionTime.append(Time.time())
     sales[Time.hour] = i
+    
+'''
 
 def costOverHour(time): # enter time in format 'HH:MM' including apostrophes
 
@@ -119,53 +129,53 @@ def costOverHour(time): # enter time in format 'HH:MM' including apostrophes
 
     for i in startTimes:
 
-        print("Considering hour starting at: ", t1.time())
-        print("Worker being checked: ", counter + 1)
+        #print("Considering hour starting at: ", t1.time())
+        #print("Worker being checked: ", counter + 1)
 
         if t1 <= i and i < t2:
             # shift starts during the considered hour, therefore contributes partial hour labour cost
             fractionWorked =  (t2 - i) / timedelta(hours=1)
-            print("worker: ", counter+1, ", partial hour worked")
-            print("fraction worked1: ", fractionWorked)
-            print("adding1: ", payRates[counter]*fractionWorked, "to labour costs total")
+            #print("worker: ", counter+1, ", partial hour worked")
+            #print("fraction worked1: ", fractionWorked)
+            #print("adding1: ", payRates[counter]*fractionWorked, "to labour costs total")
             labourCost = labourCost + payRates[counter] * fractionWorked
 
         elif i < t1 and t2 <= breakStart[counter]:
             # considered hour sits between the start of the shift and the start of the break, contributes a full hour of labour cost
-            print("worker: ", counter + 1, ", full hour worked")
-            print("adding2: ", payRates[counter], "to labour costs total")
+            #print("worker: ", counter + 1, ", full hour worked")
+            #print("adding2: ", payRates[counter], "to labour costs total")
             labourCost = labourCost + payRates[counter]
 
         elif t1 <= breakStart[counter] and breakStart[counter] < t2:
             # the considered hour straddles the start of the shift break, only partial hour labour cost
             fractionWorked = (1 - (t2 - breakStart[counter]) / timedelta(hours=1))
-            print("worker: ", counter + 1, ", partial hour worked")
-            print("fraction worked3: ", fractionWorked)
-            print("adding3: ", payRates[counter]*fractionWorked, "to labour costs total")
+            #print("worker: ", counter + 1, ", partial hour worked")
+            #print("fraction worked3: ", fractionWorked)
+            #print("adding3: ", payRates[counter]*fractionWorked, "to labour costs total")
             labourCost = labourCost + payRates[counter] * fractionWorked
 
         elif t1 <= breakEnd[counter] and t2 >= breakEnd[counter]:
             # considered hour straddles the end of workers break, only partial contribution to labour cost
             fractionWorked = (t2 - breakEnd[counter]) / timedelta(hours=1)
-            print("worker: ", counter + 1, ", partial hour worked")
-            print("fraction worked5: ", fractionWorked)
-            print("adding5: ", payRates[counter]*fractionWorked, "to labour costs total")
+            #print("worker: ", counter + 1, ", partial hour worked")
+            #print("fraction worked5: ", fractionWorked)
+            #print("adding5: ", payRates[counter]*fractionWorked, "to labour costs total")
             labourCost = labourCost + payRates[counter] * fractionWorked
 
         elif t1 > breakEnd[counter] and t2 < endTimes[counter]:
             # considered hour sits between workers break end and shift end, contributes full hour of labour cost
-            print("worker: ", counter + 1, ", full hour worked")
-            print("adding6: ", payRates[counter], "to labour costs total")
+            #print("worker: ", counter + 1, ", full hour worked")
+            #print("adding6: ", payRates[counter], "to labour costs total")
             labourCost = labourCost + payRates[counter]
 
         elif t1 <= endTimes[counter] and t2 >= endTimes[counter]:
             # considered hour straddles workers shift end, partial hour contribution to labour cost
             #print("(t2 - endTimes[counter]) ", (t2 - endTimes[counter]))
             #print("( 1 - (t2 - endTimes[counter]) / timedelta(hours=1)) ", ( 1 - (t2 - endTimes[counter]) / timedelta(hours=1)))
-            print("worker: ", counter + 1, ", partial hour worked")
+            #print("worker: ", counter + 1, ", partial hour worked")
             fractionWorked = ( 1 - (t2 - endTimes[counter]) / timedelta(hours=1))
-            print("fraction worked7: ", fractionWorked)
-            print("adding7: ", payRates[counter] * fractionWorked, "to labour costs total")
+            #print("fraction worked7: ", fractionWorked)
+            #print("adding7: ", payRates[counter] * fractionWorked, "to labour costs total")
             labourCost = labourCost + payRates[counter] * fractionWorked
 
         '''
@@ -182,7 +192,7 @@ def costOverHour(time): # enter time in format 'HH:MM' including apostrophes
 
 def process_shifts(path_to_csv):
 
-    transactions = np.genfromtxt("path_to_csv", delimiter=',', skip_header=1, dtype=[('Value', 'd'), ('Time', 'U5')], encoding=None)
+    shifts = np.genfromtxt(path_to_csv, delimiter=',', skip_header=1, dtype=[('breakTime', 'U10'), ('endTime', 'U5'), ('payRate', 'd'), ('startTime', 'U5')])
 
     # separates the work_shifts.csv out into separate lists for break notes, end times, start times and pay rates
     for i in shifts['breakTime']:
@@ -256,6 +266,14 @@ def process_shifts(path_to_csv):
                 Time = Time + timedelta(hours=12)
                 breakEnd[counter] = Time
         counter = counter + 1
+
+    for i in listOfHours:
+        costPerHour[datetime.strptime(i, format).time()] = costOverHour(i)
+
+    return costPerHour
+
+print(process_shifts("work_shifts.csv"))
+
 
 '''
 def process_shifts(path_to_csv):
