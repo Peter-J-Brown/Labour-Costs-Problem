@@ -191,7 +191,8 @@ def costOverHour(time): # enter time in format 'HH:MM'
         counter = counter + 1
     return labourCost
 
-print(costOverHour('20:00'))
+print(costOverHour('18:00'))
+
 
 
 
