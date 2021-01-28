@@ -28,6 +28,7 @@ sales = {}
 shifts = {}
 costPerHour = {}
 percentageCostPerSale = {}
+bestAndWorstPercentages = []
 
 listOfHours = []
 
@@ -46,68 +47,54 @@ def costOverHour(time): # enter time in format 'HH:MM' including apostrophes
 
     for i in startTimes:
 
-        #print("Considering hour starting at: ", t1.time())
-        #print("Worker being checked: ", counter + 1)
-
         if t1 <= i and i < t2:
             # shift starts during the considered hour, therefore contributes partial hour labour cost
             fractionWorked =  (t2 - i) / timedelta(hours=1)
-            #print("worker: ", counter+1, ", partial hour worked")
-            #print("fraction worked1: ", fractionWorked)
-            #print("adding1: ", payRates[counter]*fractionWorked, "to labour costs total")
             labourCost = labourCost + payRates[counter] * fractionWorked
 
         elif i < t1 and t2 <= breakStart[counter]:
             # considered hour sits between the start of the shift and the start of the break, contributes a full hour of labour cost
-            #print("worker: ", counter + 1, ", full hour worked")
-            #print("adding2: ", payRates[counter], "to labour costs total")
             labourCost = labourCost + payRates[counter]
 
         elif t1 <= breakStart[counter] and breakStart[counter] < t2:
             # the considered hour straddles the start of the shift break, only partial hour labour cost
             fractionWorked = (1 - (t2 - breakStart[counter]) / timedelta(hours=1))
-            #print("worker: ", counter + 1, ", partial hour worked")
-            #print("fraction worked3: ", fractionWorked)
-            #print("adding3: ", payRates[counter]*fractionWorked, "to labour costs total")
             labourCost = labourCost + payRates[counter] * fractionWorked
 
         elif t1 <= breakEnd[counter] and t2 >= breakEnd[counter]:
             # considered hour straddles the end of workers break, only partial contribution to labour cost
             fractionWorked = (t2 - breakEnd[counter]) / timedelta(hours=1)
-            #print("worker: ", counter + 1, ", partial hour worked")
-            #print("fraction worked5: ", fractionWorked)
-            #print("adding5: ", payRates[counter]*fractionWorked, "to labour costs total")
             labourCost = labourCost + payRates[counter] * fractionWorked
 
         elif t1 > breakEnd[counter] and t2 < endTimes[counter]:
             # considered hour sits between workers break end and shift end, contributes full hour of labour cost
-            #print("worker: ", counter + 1, ", full hour worked")
-            #print("adding6: ", payRates[counter], "to labour costs total")
             labourCost = labourCost + payRates[counter]
 
         elif t1 <= endTimes[counter] and t2 >= endTimes[counter]:
             # considered hour straddles workers shift end, partial hour contribution to labour cost
-            #print("(t2 - endTimes[counter]) ", (t2 - endTimes[counter]))
-            #print("( 1 - (t2 - endTimes[counter]) / timedelta(hours=1)) ", ( 1 - (t2 - endTimes[counter]) / timedelta(hours=1)))
-            #print("worker: ", counter + 1, ", partial hour worked")
             fractionWorked = ( 1 - (t2 - endTimes[counter]) / timedelta(hours=1))
-            #print("fraction worked7: ", fractionWorked)
-            #print("adding7: ", payRates[counter] * fractionWorked, "to labour costs total")
             labourCost = labourCost + payRates[counter] * fractionWorked
-
-        '''
-        if t1 > endTimes[counter]:
-            # considered hour occurs after workers shift has ended, no contribution to labour cost
-            labourCost = labourCost  # I know this is a pointless assignment, I have added the permutation for completeness
-        '''
 
         counter = counter + 1
     return labourCost
 
-#print(costOverHour('20:00'))
-
 
 def process_shifts(path_to_csv):
+
+    """
+        :param path_to_csv: The path to the work_shift.csv
+        :type string:
+        :return: A dictionary with time as key (string) with format %H:%M
+            (e.g. "18:00") and cost as value (Number)
+        For example, it should be something like :
+        {
+            "17:00": 50,
+            "22:00: 40,
+        }
+        In other words, for the hour beginning at 17:00, labour cost was
+        50 pounds
+        :rtype dict:
+    """
 
     shifts = np.genfromtxt(path_to_csv, delimiter=',', skip_header=1, dtype=[('breakTime', 'U10'), ('endTime', 'U5'), ('payRate', 'd'), ('startTime', 'U5')])
 
@@ -192,6 +179,25 @@ def process_shifts(path_to_csv):
 
 def process_sales(path_to_csv):
 
+    """
+
+        :param path_to_csv: The path to the transactions.csv
+        :type string:
+        :return: A dictionary with time (string) with format %H:%M as key and
+        sales as value (string),
+        and corresponding value with format %H:%M (e.g. "18:00"),
+        and type float)
+        For example, it should be something like :
+        {
+            "17:00": 250,
+            "22:00": 0,
+        },
+        This means, for the hour beginning at 17:00, the sales were 250 dollars
+        and for the hour beginning at 22:00, the sales were 0.
+
+        :rtype dict:
+
+    """
     transactions = np.genfromtxt(path_to_csv, delimiter=',', skip_header=1, dtype=[('Value', 'd'), ('Time', 'U5')], encoding=None)
     transactionAndHour = collections.defaultdict(float)
 
@@ -211,27 +217,32 @@ def process_sales(path_to_csv):
     return dict(transactionAndHour)
 
 
-#print("Shifts dictionary: ", process_shifts("work_shifts.csv"))
-#print("Sales dictionary: ", process_sales("transactions.csv"))
-
-#shifts = process_shifts("work_shifts.csv")
-#sales = process_sales("transactions.csv")
-
-#print(shifts)
-#print(sales)
 
 def compute_percentage(shifts, sales):
 
-    # time as key
-    # percentage of labour cost per sales as value (float)
-    # If the sales are null, then return -cost instead of percentage
-    #
+    """
+
+        :param shifts:
+        :type shifts: dict
+        :param sales:
+        :type sales: dict
+        :return: A dictionary with time as key (string) with format %H:%M and
+        percentage of labour cost per sales as value (float),
+        If the sales are null, then return -cost instead of percentage
+        For example, it should be something like :
+        {
+            "17:00": 20,
+            "22:00": -40,
+        }
+        :rtype: dict
+    """
+
     percentageCostPerSale = collections.defaultdict(float)
 
     for i in listOfHours:
-        print("i: ", i)
+        #print("i: ", i)
         salesThatHour = sales.get(i) #gets the value in the sales dict associated with the time i
-        print("Sales that hour: ", salesThatHour)
+        #print("Sales that hour: ", salesThatHour)
         if salesThatHour != None:
             labourCost = shifts.get(i)
             percentageLabourCost = (labourCost / salesThatHour) * 100
@@ -240,106 +251,60 @@ def compute_percentage(shifts, sales):
             labourCost = -1 * shifts.get(i)
             percentageCostPerSale[i] = labourCost
 
-
     return dict(percentageCostPerSale)
 
 
 
 #print(compute_percentage(process_shifts("work_shifts.csv"), process_sales("transactions.csv")))
 
-'''
-def best_and_worst_hour(percentages):
-    """
-
-    Args:
-    percentages: output of compute_percentage
-    Return: list of strings, the first element should be the best hour,
-    the second (and last) element should be the worst hour. Hour are
-    represented by string with format %H:%M
-    e.g. ["18:00", "20:00"]
-
-    """
-
-    return
-'''
-
-
-'''
-def process_shifts(path_to_csv):
-    """
-
-    :param path_to_csv: The path to the work_shift.csv
-    :type string:
-    :return: A dictionary with time as key (string) with format %H:%M
-        (e.g. "18:00") and cost as value (Number)
-    For example, it should be something like :
-    {
-        "17:00": 50,
-        "22:00: 40,
-    }
-    In other words, for the hour beginning at 17:00, labour cost was
-    50 pounds
-    :rtype dict:
-    """
-    return
-
-
-def process_sales(path_to_csv):
-    """
-
-    :param path_to_csv: The path to the transactions.csv
-    :type string:
-    :return: A dictionary with time (string) with format %H:%M as key and
-    sales as value (string),
-    and corresponding value with format %H:%M (e.g. "18:00"),
-    and type float)
-    For example, it should be something like :
-    {
-        "17:00": 250,
-        "22:00": 0,
-    },
-    This means, for the hour beginning at 17:00, the sales were 250 dollars
-    and for the hour beginning at 22:00, the sales were 0.
-
-    :rtype dict:
-    """
-    return
-'''
-
-
-'''
-def compute_percentage(shifts, sales):
-    """
-
-    :param shifts:
-    :type shifts: dict
-    :param sales:
-    :type sales: dict
-    :return: A dictionary with time as key (string) with format %H:%M and
-    percentage of labour cost per sales as value (float),
-    If the sales are null, then return -cost instead of percentage
-    For example, it should be something like :
-    {
-        "17:00": 20,
-        "22:00": -40,
-    }
-    :rtype: dict
-    """
-    return
 
 def best_and_worst_hour(percentages):
-    """
 
-    Args:
-    percentages: output of compute_percentage
-    Return: list of strings, the first element should be the best hour,
-    the second (and last) element should be the worst hour. Hour are
-    represented by string with format %H:%M
-    e.g. ["18:00", "20:00"]
+    # wording is slightly ambiguous, but I am assuming the 'best' hour, is the hour for which labour costs represent
+    # the smallest percentage of sales and cost is not negative
 
     """
 
-    return
+        Args:
+        percentages: output of compute_percentage
+        Return: list of strings, the first element should be the best hour,
+        the second (and last) element should be the worst hour. Hour are
+        represented by string with format %H:%M
+        e.g. ["18:00", "20:00"]
+
+    """
+
+    bestAndWorst = []
+
+    lowest_key1 = ''
+    lowest_value1 = float('inf')
+
+    for key1 in percentages.keys():
+        value1 = percentages[key1]
+        if value1 <= 0.0:
+            continue
+
+        if value1 < lowest_value1:
+            lowest_key1 = key1
+            lowest_value1 = value1
+
+    lowest_key2 = ''
+    lowest_value2 = float(0)
+
+    for key2 in percentages.keys():
+        value2 = percentages[key2]
+        if value2 >= 0.0:
+            continue
+
+        if value2 < lowest_value2:
+            lowest_key2 = key2
+            lowest_value2 = value2
+
+    bestAndWorst.append(lowest_key1)
+    bestAndWorst.append(lowest_key2)
+
+    return bestAndWorst
+
 
 def main(path_to_shifts, path_to_sales):
     """
@@ -353,12 +318,7 @@ def main(path_to_shifts, path_to_sales):
     best_hour, worst_hour = best_and_worst_hour(percentages)
     return best_hour, worst_hour
 
-
-if __name__ == '__main__':
-    # You can change this to test your code, it will not be used
-    path_to_sales = ""
-    path_to_shifts = ""
-    best_hour, worst_hour = main(path_to_shifts, path_to_sales)
-'''
+print()
+print(main("work_shifts.csv", "transactions.csv"))
 
 # Please write you name here: Peter Brown
