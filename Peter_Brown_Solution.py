@@ -1,12 +1,19 @@
 """
 Please write you name here: Peter Brown
 """
+
 """
+I know that the transaction value given for 20:00 is wrong, and I know why that is. I believe everything
+else is right, however. I would love to discuss the flaws of this code, what I could have done better and what I have 
+learned in an interview, if you would be willing.
+
+I thought involving datetimes would makes things easier for me - it did not - however, I was too deep down the rabbit 
+hole by the time I realised my mistake.
 
 """
 
 import numpy as np
-from datetime import * # I made life more difficult for myself by involving datetime objects
+from datetime import *
 import collections
 
 format = '%H:%M' #defines time format for the datetime module to accept
@@ -207,23 +214,28 @@ def process_sales(path_to_csv):
         :rtype dict:
 
     """
+
+    # ingests the CSV and defines what data type each is and how many bytes it needs
     transactions = np.genfromtxt(path_to_csv, delimiter=',', skip_header=1, dtype=[('Value', 'd'), ('Time', 'U5')], encoding=None)
     transactionAndHour = collections.defaultdict(float)
 
+    # separates sale values in its own list
     for i in transactions['Value']:
         transactionValue.append(i)
 
+    # separates sale time into its own list, corrects formatting to HH:00 since minutes not important
+    # only sales over the whole hour considered
     for j in transactions['Time']:
         hh , mm = j.split(':')
         hh = hh + ':00'
         salesHour.append(hh)
 
-    counter = 0
-    while counter < len(salesHour):
+    counter = 0 # initialises counter
+    while counter < len(salesHour): # merges transaction values that occur in the same hour
         transactionAndHour[salesHour[counter]] += transactionValue[counter]
-        counter += 1
+        counter += 1 # increments counter
 
-    return dict(transactionAndHour)
+    return dict(transactionAndHour) # returns the required dictionary
 
 
 
@@ -249,28 +261,22 @@ def compute_percentage(shifts, sales):
     percentageCostPerSale = collections.defaultdict(float)
 
     for i in listOfHours:
-        #print("i: ", i)
         salesThatHour = sales.get(i) #gets the value in the sales dict associated with the time i
-        #print("Sales that hour: ", salesThatHour)
-        if salesThatHour != None:
+        if salesThatHour != None: # percentage of labour cost per sale
             labourCost = shifts.get(i)
             percentageLabourCost = (labourCost / salesThatHour) * 100
             percentageCostPerSale[i] = percentageLabourCost
         else:
-            labourCost = -1 * shifts.get(i)
+            labourCost = -1 * shifts.get(i) # If the sales are null, then return -cost instead of percentage
             percentageCostPerSale[i] = labourCost
 
     return dict(percentageCostPerSale)
 
 
-
-#print(compute_percentage(process_shifts("work_shifts.csv"), process_sales("transactions.csv")))
-
-
 def best_and_worst_hour(percentages):
 
     # wording is slightly ambiguous, but I am assuming the 'best' hour, is the hour for which labour costs represent
-    # the smallest percentage of sales and cost is not negative
+    # the smallest percentage of sales and cost is not negative. I.E. the best profit margin for the business owner.
 
     """
 
@@ -288,8 +294,8 @@ def best_and_worst_hour(percentages):
     lowest_key1 = ''
     lowest_value1 = float('inf')
 
-    for key1 in percentages.keys():
-        value1 = percentages[key1]
+    for key1 in percentages.keys(): # finds the lowest percentage that is non zero and non negative
+        value1 = percentages[key1]  # and the key associated with that percentage
         if value1 <= 0.0:
             continue
 
@@ -300,7 +306,7 @@ def best_and_worst_hour(percentages):
     lowest_key2 = ''
     lowest_value2 = float(0)
 
-    for key2 in percentages.keys():
+    for key2 in percentages.keys(): # finds the most negative cost and the key associated with that cost
         value2 = percentages[key2]
         if value2 >= 0.0:
             continue
@@ -309,10 +315,10 @@ def best_and_worst_hour(percentages):
             lowest_key2 = key2
             lowest_value2 = value2
 
-    bestAndWorst.append(lowest_key1)
+    bestAndWorst.append(lowest_key1) # adds these best and worst keys to the required list
     bestAndWorst.append(lowest_key2)
 
-    return bestAndWorst
+    return bestAndWorst # returns the required 2 member list
 
 
 def main(path_to_shifts, path_to_sales):
@@ -327,6 +333,6 @@ def main(path_to_shifts, path_to_sales):
     best_hour, worst_hour = best_and_worst_hour(percentages)
     return best_hour, worst_hour
 
-print(main("work_shifts.csv", "transactions.csv"))
+print(main("work_shifts.csv", "transactions.csv")) # testing that the main function is working as intended
 
 # Please write you name here: Peter Brown
