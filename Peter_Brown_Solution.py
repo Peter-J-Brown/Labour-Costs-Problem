@@ -272,7 +272,26 @@ def process_shifts(path_to_csv):
 
     return costPerHour
 
+
+def process_sales(path_to_csv):
+
+    transactions = np.genfromtxt(path_to_csv, delimiter=',', skip_header=1, dtype=[('Value', 'd'), ('Time', 'U5')], encoding=None)
+
+    for i in transactions['Value']:
+        transactionValue.append(i)
+
+    for j in transactions['Time']:
+        Time = datetime.strptime(j, format)
+        transactionTime.append(Time.time())
+        sales[Time.hour] = i
+
+    return sales
+
 print(process_shifts("work_shifts.csv"))
+print(process_sales("transactions.csv"))
+
+
+
 
 
 '''
