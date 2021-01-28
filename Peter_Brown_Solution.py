@@ -19,8 +19,10 @@ endTimes = [] # times shifts end at
 payRates = [] # pay rate of each staff member
 sales = {}
 shifts = {}
+costPerHour = {}
 
-hourOfDay = np.arange(0,24,1)
+
+'''
 
 transactions = np.genfromtxt("transactions.csv", delimiter = ',', skip_header = 1, dtype = [('Value', 'd'), ('Time', 'U5')], encoding = None)
 shifts = np.genfromtxt("work_shifts.csv", delimiter=',', skip_header = 1, dtype = [('breakTime', 'U10'), ('endTime', 'U5'), ('payRate', 'd'), ('startTime', 'U5')])
@@ -97,6 +99,8 @@ for i in breakEnd:
             Time = Time + timedelta(hours=12)
             breakEnd[counter] = Time
     counter = counter + 1
+    
+'''
 
 for i in transactions['Value']:
     transactionValue.append(i)
@@ -106,27 +110,19 @@ for j in transactions['Time']:
     transactionTime.append(Time.time())
     sales[Time.hour] = i
 
-#print("sales: ", sales)
-#print("Shift Start times: ", startTimes)
-#print("Break start times: ", breakStart)
-#print("Break end times: ", breakEnd)
-#print("Shift end times: ", endTimes)
+def costOverHour(time): # enter time in format 'HH:MM' including apostrophes
 
-def costOverHour(time): # enter time in format 'HH:MM'
     t1 = datetime.strptime(time, format)
     t2 = t1 + timedelta(hours=1)
-    #print("Calculating cost for hour beginning with: ", t1.time())
     counter = 0
     labourCost = 0
+
     for i in startTimes:
+
         print("Considering hour starting at: ", t1.time())
         print("Worker being checked: ", counter + 1)
-        #print("end time of shift being checked is: ", endTimes[counter])
-        if i >= t2:
-            # shift had not start before hour being considered ended, no contribution to labour cost
-            labourCost = labourCost  # I know this is a pointless assignment, I have added the permutation for completeness
 
-        elif t1 <= i and i < t2:
+        if t1 <= i and i < t2:
             # shift starts during the considered hour, therefore contributes partial hour labour cost
             fractionWorked =  (t2 - i) / timedelta(hours=1)
             print("worker: ", counter+1, ", partial hour worked")
@@ -146,34 +142,23 @@ def costOverHour(time): # enter time in format 'HH:MM'
             print("worker: ", counter + 1, ", partial hour worked")
             print("fraction worked3: ", fractionWorked)
             print("adding3: ", payRates[counter]*fractionWorked, "to labour costs total")
-            #print("(1 - (t2 - breakStart[counter]) ", (1 - (t2 - breakStart[counter])))
-            #print("(t2 - breakEnd[counter]) / timedelta(hours=1) ", (1 - (t2 - breakStart[counter]) / timedelta(hours=1)))
             labourCost = labourCost + payRates[counter] * fractionWorked
-            #print(labourCost)
 
-        if t1 > breakStart[counter] and t2 < breakEnd[counter]:
-            # considered hour sits within the workers break, no contribution to labour cost
-            print("worker: ", counter + 1, ", full hour worked")
-            print("adding4: ", payRates[counter], "to labour costs total")
-            labourCost = labourCost  # I know this is a pointless assignment, I have added the permutation for completeness
-
-        if t1 <= breakEnd[counter] and t2 >= breakEnd[counter]:
+        elif t1 <= breakEnd[counter] and t2 >= breakEnd[counter]:
             # considered hour straddles the end of workers break, only partial contribution to labour cost
-            #print("(t2 - breakEnd[counter]) ", (t2 - breakEnd[counter]))
-            #print("(t2 - breakEnd[counter]) / timedelta(hours=1) ", (t2 - breakEnd[counter]) / timedelta(hours=1))
             fractionWorked = (t2 - breakEnd[counter]) / timedelta(hours=1)
             print("worker: ", counter + 1, ", partial hour worked")
             print("fraction worked5: ", fractionWorked)
             print("adding5: ", payRates[counter]*fractionWorked, "to labour costs total")
             labourCost = labourCost + payRates[counter] * fractionWorked
 
-        if t1 > breakEnd[counter] and t2 < endTimes[counter]:
+        elif t1 > breakEnd[counter] and t2 < endTimes[counter]:
             # considered hour sits between workers break end and shift end, contributes full hour of labour cost
             print("worker: ", counter + 1, ", full hour worked")
             print("adding6: ", payRates[counter], "to labour costs total")
             labourCost = labourCost + payRates[counter]
 
-        if t1 <= endTimes[counter] and t2 >= endTimes[counter]:
+        elif t1 <= endTimes[counter] and t2 >= endTimes[counter]:
             # considered hour straddles workers shift end, partial hour contribution to labour cost
             #print("(t2 - endTimes[counter]) ", (t2 - endTimes[counter]))
             #print("( 1 - (t2 - endTimes[counter]) / timedelta(hours=1)) ", ( 1 - (t2 - endTimes[counter]) / timedelta(hours=1)))
@@ -183,23 +168,94 @@ def costOverHour(time): # enter time in format 'HH:MM'
             print("adding7: ", payRates[counter] * fractionWorked, "to labour costs total")
             labourCost = labourCost + payRates[counter] * fractionWorked
 
+        '''
         if t1 > endTimes[counter]:
             # considered hour occurs after workers shift has ended, no contribution to labour cost
             labourCost = labourCost  # I know this is a pointless assignment, I have added the permutation for completeness
-
+        '''
 
         counter = counter + 1
     return labourCost
 
-print(costOverHour('18:00'))
+#print(costOverHour('20:00'))
 
 
+def process_shifts(path_to_csv):
 
+    transactions = np.genfromtxt("path_to_csv", delimiter=',', skip_header=1, dtype=[('Value', 'd'), ('Time', 'U5')], encoding=None)
 
+    # separates the work_shifts.csv out into separate lists for break notes, end times, start times and pay rates
+    for i in shifts['breakTime']:
+        breaks.append(i)
+    for j in shifts['endTime']:
+        endTimes.append(j)
+    for k in shifts['payRate']:
+        payRates.append(k)
+    for l in shifts['startTime']:
+        startTimes.append(l)
 
+    for i in breaks:
+        start, end = i.split('-')
+        for char in start:
+            if not char.isdigit() and char != '.':
+                start = start.replace(char, '')
+            if char == '.':
+                start = start.replace(char, ':')
+        for char in end:
+            if not char.isdigit() and char != '.':
+                end = end.replace(char, '')
+            if char == '.':
+                end = end.replace(char, ':')
+        breakStart.append(start)
+        breakEnd.append(end)
 
+    counter = 0
+    for i in startTimes:
+        Time = datetime.strptime(i, format)
+        i = Time
+        startTimes[counter] = Time
+        counter = counter + 1
 
+    counter = 0
+    for i in endTimes:
+        Time = datetime.strptime(i, format)
+        i = Time
+        endTimes[counter] = Time
+        counter = counter + 1
 
+    counter = 0
+    for i in breakStart:
+        if len(i) == 1 or len(i) == 2:
+            i = i + ':00'
+            Time = datetime.strptime(i, format)
+            breakStart[counter] = Time
+            if breakStart[counter].time() < startTimes[counter].time():
+                Time = Time + timedelta(hours=12)
+                breakStart[counter] = Time
+        else:
+            Time = datetime.strptime(i, format)
+            breakStart[counter] = Time
+            if breakStart[counter].time() < startTimes[counter].time():
+                Time = Time + timedelta(hours=12)
+                breakStart[counter] = Time
+        counter = counter + 1
+
+    counter = 0
+    for i in breakEnd:
+        if len(i) == 1 or len(i) == 2:
+            i = i + ':00'
+            Time = datetime.strptime(i, format)
+            breakEnd[counter] = Time
+            if breakEnd[counter].time() < startTimes[counter].time():
+                Time = Time + timedelta(hours=12)
+                breakEnd[counter] = Time
+        else:
+            Time = datetime.strptime(i, format)
+            breakEnd[counter] = Time
+            if breakEnd[counter].time() < startTimes[counter].time():
+                Time = Time + timedelta(hours=12)
+                breakEnd[counter] = Time
+        counter = counter + 1
 
 '''
 def process_shifts(path_to_csv):
