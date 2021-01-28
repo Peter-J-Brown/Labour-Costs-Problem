@@ -3,15 +3,21 @@ Please write you name here: Peter Brown
 """
 
 """
-I know that the transaction value given for 20:00 is wrong, and I know why that is. I believe everything
+I enjoyed this coding test, although it took me longer than I might care to admit. Some comments below:
+
+I know that the transaction value given for 18:00 is wrong, and I know why that is. I believe everything
 else is right, however. I would love to discuss the flaws of this code, what I could have done better and what I have 
-learned in an interview, if you would be willing.
+learned, in an interview, if you would be willing.
 
 I thought involving datetimes would makes things easier for me - it did not - however, I was too deep down the rabbit 
 hole by the time I realised my mistake.
 
+If you want to see how this developed, and the commits I made along the way, it is on my GitHub with all references to
+your company name removed, the repository is simply named 'Labour-Cost-Problem':
+https://github.com/Peter-J-Brown/Labour-Costs-Problem/blob/master/Peter_Brown_Solution.py
+
 If anything here behaves not as expected, or you want clarification of how something works if you
-feel I haven't been clear enough, then please let me know.
+feel I haven't been clear enough, then please let me know: peter8rown@hotmail.co.uk
 
 """
 
@@ -50,6 +56,7 @@ while x <= 23:  # creates a 24 member list of hours, e.g. ['00:00','1:00','2:00'
 def costOverHour(time):
 
     """
+
     Input: Hour in format 'HH:00' including apostrophes, string.
     Output: Total labour cost for that hour, float.
 
@@ -59,7 +66,10 @@ def costOverHour(time):
     counter = 0 # initialises a counter
     labourCost = 0 # initialises labour cost
 
-    for i in startTimes:
+    for i in startTimes: # the logic in this section could definitely be improved, I am aware there is at least one
+                         # edge case for which this does not work, for example 18:00 because that specific hour triggers
+                         # two of these conditions, because of the way one of the staff breaks lines up with it,
+                         # and that staff members labour cost is therefore counted twice in error
 
         if t1 <= i and i < t2:
             # shift starts during the considered hour, therefore contributes partial hour labour cost
@@ -145,50 +155,50 @@ def process_shifts(path_to_csv):
 
     counter = 0
     for i in startTimes:
-        Time = datetime.strptime(i, format)
-        i = Time
-        startTimes[counter] = Time
+        t = datetime.strptime(i, format)
+        i = t
+        startTimes[counter] = t
         counter = counter + 1
 
     counter = 0
     for i in endTimes:
-        Time = datetime.strptime(i, format)
-        i = Time
-        endTimes[counter] = Time
+        t = datetime.strptime(i, format)
+        i = t
+        endTimes[counter] = t
         counter = counter + 1
 
     counter = 0
     for i in breakStart:
         if len(i) == 1 or len(i) == 2:
             i = i + ':00'
-            Time = datetime.strptime(i, format)
-            breakStart[counter] = Time
+            t = datetime.strptime(i, format)
+            breakStart[counter] = t
             if breakStart[counter].time() < startTimes[counter].time():
-                Time = Time + timedelta(hours=12)
-                breakStart[counter] = Time
+                t = t + timedelta(hours=12)
+                breakStart[counter] = t
         else:
-            Time = datetime.strptime(i, format)
-            breakStart[counter] = Time
+            t = datetime.strptime(i, format)
+            breakStart[counter] = t
             if breakStart[counter].time() < startTimes[counter].time():
-                Time = Time + timedelta(hours=12)
-                breakStart[counter] = Time
+                t = t + timedelta(hours=12)
+                breakStart[counter] = t
         counter = counter + 1
 
     counter = 0
     for i in breakEnd:
         if len(i) == 1 or len(i) == 2:
             i = i + ':00'
-            Time = datetime.strptime(i, format)
-            breakEnd[counter] = Time
+            t = datetime.strptime(i, format)
+            breakEnd[counter] = t
             if breakEnd[counter].time() < startTimes[counter].time():
-                Time = Time + timedelta(hours=12)
-                breakEnd[counter] = Time
+                t = t + timedelta(hours=12)
+                breakEnd[counter] = t
         else:
-            Time = datetime.strptime(i, format)
-            breakEnd[counter] = Time
+            t = datetime.strptime(i, format)
+            breakEnd[counter] = t
             if breakEnd[counter].time() < startTimes[counter].time():
-                Time = Time + timedelta(hours=12)
-                breakEnd[counter] = Time
+                t = t + timedelta(hours=12)
+                breakEnd[counter] = t
         counter = counter + 1
 
     for i in listOfHours:
