@@ -268,7 +268,7 @@ def process_shifts(path_to_csv):
         counter = counter + 1
 
     for i in listOfHours:
-        costPerHour[datetime.strptime(i, format).time()] = costOverHour(i)
+        costPerHour[i] = costOverHour(i)
 
     return costPerHour
 
@@ -281,9 +281,7 @@ def process_sales(path_to_csv):
         transactionValue.append(i)
 
     for j in transactions['Time']:
-        Time = datetime.strptime(j, format)
-        transactionTime.append(Time.time())
-        sales[Time.hour] = i
+        sales[j] = i
 
     return sales
 
