@@ -4,10 +4,13 @@ Please write you name here: Peter Brown
 
 import numpy as np
 from datetime import *
+import collections
 
 format = '%H:%M' #defines time format for the datetime module to accept
 
 transactionTime = [] # initialises the various lists to be used
+transactionAndHour = {}
+transactionsOverHour = []
 transactionValue = []
 
 breaks = [] # list of breaks in the format they were provided in
@@ -17,6 +20,9 @@ breakEnd = [] # times breaks start at
 startTimes = [] # times shifts start at
 endTimes = [] # times shifts end at
 payRates = [] # pay rate of each staff member
+salesHour = []
+salesHourReduced = []
+salesOverHour = {}
 sales = {}
 shifts = {}
 costPerHour = {}
@@ -28,97 +34,6 @@ while x <= 23:  # creates a 24 member list of hours, e.g. ['00:00','1:00','2:00'
     stringTime = str(x) + ':00'
     listOfHours.append(stringTime)
     x = x + 1
-
-'''
-
-transactions = np.genfromtxt("transactions.csv", delimiter = ',', skip_header = 1, dtype = [('Value', 'd'), ('Time', 'U5')], encoding = None)
-shifts = np.genfromtxt("work_shifts.csv", delimiter=',', skip_header = 1, dtype = [('breakTime', 'U10'), ('endTime', 'U5'), ('payRate', 'd'), ('startTime', 'U5')])
-
-# separates the work_shifts.csv out into separate lists for break notes, end times, start times and pay rates
-for i in shifts['breakTime']:
-    breaks.append(i)
-for j in shifts['endTime']:
-    endTimes.append(j)
-for k in shifts['payRate']:
-    payRates.append(k)
-for l in shifts['startTime']:
-    startTimes.append(l)
-
-for i in breaks:
-    start, end = i.split('-')
-    for char in start:
-        if not char.isdigit() and char != '.':
-            start = start.replace(char, '')
-        if char == '.':
-            start = start.replace(char, ':')
-    for char in end:
-        if not char.isdigit() and char != '.':
-            end = end.replace(char, '')
-        if char == '.':
-            end = end.replace(char, ':')
-    breakStart.append(start)
-    breakEnd.append(end)
-
-counter = 0
-for i in startTimes:
-    Time = datetime.strptime(i, format)
-    i = Time
-    startTimes[counter] = Time
-    counter = counter + 1
-
-counter = 0
-for i in endTimes:
-    Time = datetime.strptime(i, format)
-    i = Time
-    endTimes[counter] = Time
-    counter = counter + 1
-
-counter = 0
-for i in breakStart:
-    if len(i) == 1 or len(i) == 2:
-        i = i + ':00'
-        Time = datetime.strptime(i, format)
-        breakStart[counter] = Time
-        if breakStart[counter].time() < startTimes[counter].time():
-            Time = Time + timedelta(hours=12)
-            breakStart[counter] = Time
-    else:
-        Time = datetime.strptime(i, format)
-        breakStart[counter] = Time
-        if breakStart[counter].time() < startTimes[counter].time():
-            Time = Time + timedelta(hours=12)
-            breakStart[counter] = Time
-    counter = counter + 1
-
-counter = 0
-for i in breakEnd:
-    if len(i) == 1 or len(i) == 2:
-        i = i + ':00'
-        Time = datetime.strptime(i, format)
-        breakEnd[counter] = Time
-        if breakEnd[counter].time() < startTimes[counter].time():
-            Time = Time + timedelta(hours=12)
-            breakEnd[counter] = Time
-    else:
-        Time = datetime.strptime(i, format)
-        breakEnd[counter] = Time
-        if breakEnd[counter].time() < startTimes[counter].time():
-            Time = Time + timedelta(hours=12)
-            breakEnd[counter] = Time
-    counter = counter + 1
-    
-'''
-
-'''
-for i in transactions['Value']:
-    transactionValue.append(i)
-
-for j in transactions['Time']:
-    Time = datetime.strptime(j, format)
-    transactionTime.append(Time.time())
-    sales[Time.hour] = i
-    
-'''
 
 def costOverHour(time): # enter time in format 'HH:MM' including apostrophes
 
@@ -276,19 +191,28 @@ def process_shifts(path_to_csv):
 def process_sales(path_to_csv):
 
     transactions = np.genfromtxt(path_to_csv, delimiter=',', skip_header=1, dtype=[('Value', 'd'), ('Time', 'U5')], encoding=None)
+    transactionAndHour = collections.defaultdict(float)
 
     for i in transactions['Value']:
         transactionValue.append(i)
 
-    counter = 0
     for j in transactions['Time']:
-        sales[j] = transactionValue[counter]
-        counter = counter + 1
+        #sales[j] = transactionValue[counter]
+        #ounter = counter + 1
+        hh , mm = j.split(':')
+        hh = hh + ':00'
+        salesHour.append(hh)
 
-    return sales
+    counter = 0
+    while counter < len(salesHour):
+        transactionAndHour[salesHour[counter]] += transactionValue[counter]
+        counter += 1
 
-print(process_shifts("work_shifts.csv"))
-print(process_sales("transactions.csv"))
+    return dict(transactionAndHour)
+
+
+print("Shifts dictionary: ", process_shifts("work_shifts.csv"))
+print("Sales dictionary: ", process_sales("transactions.csv"))
 
 
 
@@ -334,7 +258,11 @@ def process_sales(path_to_csv):
     :rtype dict:
     """
     return
+'''
 
+#def compute_percentage(shifts, sales):
+
+'''
 def compute_percentage(shifts, sales):
     """
 
