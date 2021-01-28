@@ -10,11 +10,14 @@ learned in an interview, if you would be willing.
 I thought involving datetimes would makes things easier for me - it did not - however, I was too deep down the rabbit 
 hole by the time I realised my mistake.
 
+If anything here behaves not as expected, or you want clarification of how something works if you
+feel I haven't been clear enough, then please let me know.
+
 """
 
-import numpy as np
-from datetime import *
 import collections
+from datetime import *
+import numpy as np
 
 format = '%H:%M' #defines time format for the datetime module to accept
 
@@ -47,7 +50,7 @@ while x <= 23:  # creates a 24 member list of hours, e.g. ['00:00','1:00','2:00'
 def costOverHour(time):
 
     """
-    Input: Hour in format 'HH:00' including apostrophes
+    Input: Hour in format 'HH:00' including apostrophes, string.
     Output: Total labour cost for that hour, float.
 
     """
@@ -124,6 +127,7 @@ def process_shifts(path_to_csv):
     # it splits by '-' and removes letters like PM etc
     # whether a time is 24 or 12 hour is inferred by whether the break starts before the shift does
     # if this is the case, then add 12 hours to the time to convert it to 24 hour format
+    # it then converts the string format times into datetime objects
     for i in breaks:
         start, end = i.split('-')
         for char in start:
