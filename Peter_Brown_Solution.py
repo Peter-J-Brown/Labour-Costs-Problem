@@ -280,8 +280,10 @@ def process_sales(path_to_csv):
     for i in transactions['Value']:
         transactionValue.append(i)
 
+    counter = 0
     for j in transactions['Time']:
-        sales[j] = i
+        sales[j] = transactionValue[counter]
+        counter = counter + 1
 
     return sales
 
