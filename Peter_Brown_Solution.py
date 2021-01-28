@@ -22,10 +22,12 @@ endTimes = [] # times shifts end at
 payRates = [] # pay rate of each staff member
 salesHour = []
 salesHourReduced = []
+
 salesOverHour = {}
 sales = {}
 shifts = {}
 costPerHour = {}
+percentageCostPerSale = {}
 
 listOfHours = []
 
@@ -197,8 +199,6 @@ def process_sales(path_to_csv):
         transactionValue.append(i)
 
     for j in transactions['Time']:
-        #sales[j] = transactionValue[counter]
-        #ounter = counter + 1
         hh , mm = j.split(':')
         hh = hh + ':00'
         salesHour.append(hh)
@@ -211,11 +211,57 @@ def process_sales(path_to_csv):
     return dict(transactionAndHour)
 
 
-print("Shifts dictionary: ", process_shifts("work_shifts.csv"))
-print("Sales dictionary: ", process_sales("transactions.csv"))
+#print("Shifts dictionary: ", process_shifts("work_shifts.csv"))
+#print("Sales dictionary: ", process_sales("transactions.csv"))
+
+#shifts = process_shifts("work_shifts.csv")
+#sales = process_sales("transactions.csv")
+
+#print(shifts)
+#print(sales)
+
+def compute_percentage(shifts, sales):
+
+    # time as key
+    # percentage of labour cost per sales as value (float)
+    # If the sales are null, then return -cost instead of percentage
+    #
+    percentageCostPerSale = collections.defaultdict(float)
+
+    for i in listOfHours:
+        print("i: ", i)
+        salesThatHour = sales.get(i) #gets the value in the sales dict associated with the time i
+        print("Sales that hour: ", salesThatHour)
+        if salesThatHour != None:
+            labourCost = shifts.get(i)
+            percentageLabourCost = (labourCost / salesThatHour) * 100
+            percentageCostPerSale[i] = percentageLabourCost
+        else:
+            labourCost = -1 * shifts.get(i)
+            percentageCostPerSale[i] = labourCost
+
+
+    return dict(percentageCostPerSale)
 
 
 
+#print(compute_percentage(process_shifts("work_shifts.csv"), process_sales("transactions.csv")))
+
+'''
+def best_and_worst_hour(percentages):
+    """
+
+    Args:
+    percentages: output of compute_percentage
+    Return: list of strings, the first element should be the best hour,
+    the second (and last) element should be the worst hour. Hour are
+    represented by string with format %H:%M
+    e.g. ["18:00", "20:00"]
+
+    """
+
+    return
+'''
 
 
 '''
@@ -260,7 +306,6 @@ def process_sales(path_to_csv):
     return
 '''
 
-#def compute_percentage(shifts, sales):
 
 '''
 def compute_percentage(shifts, sales):
